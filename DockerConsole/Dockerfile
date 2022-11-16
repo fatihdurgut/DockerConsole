@@ -1,26 +1,17 @@
-﻿FROM mcr.microsoft.com/dotnet/framework/sdk:4.7.2-windowsservercore-ltsc2019 AS build
+﻿FROM mcr.microsoft.com/dotnet/framework/sdk:4.8-windowsservercore-ltsc2019 AS build
 WORKDIR /app
-
- 
 
 # copy csproj and restore as distinct layers
-COPY ../*.sln .
-COPY *.csproj ./
-COPY *.config ./
-RUN nuget restore
+COPY *.csproj .
+RUN dotnet restore
 
- 
-
-# copy everything else and build app
+# copy and build everything else
 COPY . .
 WORKDIR /app
-RUN msbuild /p:Configuration=Release -r:False
-
- 
+RUN dotnet publish -c Release -o out --no-restore
 
 
-FROM mcr.microsoft.com/dotnet/framework/aspnet:4.7.2-windowsservercore-ltsc2019 AS runtime
-WORKDIR .
-COPY --from=build app/ .
-
+FROM mcr.microsoft.com/dotnet/framework/runtime:4.8-windowsservercore-ltsc2019 AS runtime
+WORKDIR /app
+COPY --from=build /app/out ./
 ENTRYPOINT ["dockerconsole.exe"]
